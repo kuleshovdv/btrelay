@@ -7,10 +7,13 @@
 
 #define EEPROM_SECRET_OFFSET  20
 
-#define RELAY_PIN  13
+#define LED_PIN  13
+#define RELAY_PIN  6
 #define RELAY_COM_TIME  500 //ms
+#define BLE_RESET_PIN 8
 
 #define SETUPBUTTON_PIN  10
+
 
 char secret[SECRET_KEY_LENGTH];// = "password";
 unsigned long sessionStart = 0;
@@ -36,7 +39,13 @@ String printHash(uint8_t* hash) {
 }
 
 void setup() {
+  pinMode(BLE_RESET_PIN, OUTPUT);
+  digitalWrite(BLE_RESET_PIN, HIGH);
+
+
   pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN , LOW);
+  pinMode(LED_PIN, OUTPUT);
   pinMode(SETUPBUTTON_PIN, INPUT);
   EEPROM.get(EEPROM_SECRET_OFFSET, secret);
   Serial.begin(9600);
@@ -54,6 +63,8 @@ void relayCom() { // main relay action
 
 String commandProcessor(String incomingString) {
   String result;
+
+  digitalWrite(LED_PIN, HIGH);
 
   incomingString.trim();
 
@@ -80,6 +91,9 @@ String commandProcessor(String incomingString) {
     EEPROM.put(EEPROM_SECRET_OFFSET, secret);
     result = "OK";
   } else if  (incomingString.startsWith("BTNAME:") && digitalRead(SETUPBUTTON_PIN)) {
+    digitalWrite(BLE_RESET_PIN, LOW);
+    delay(1);
+    digitalWrite(BLE_RESET_PIN, HIGH);
     result = "COMING_SOON";
   } else if  (incomingString.startsWith("BTPIN:") && digitalRead(SETUPBUTTON_PIN)) {
     result = "COMING_SOON";
@@ -88,6 +102,7 @@ String commandProcessor(String incomingString) {
     result = "BLUETOOTH CRYPTO RELAY 0.1";
   }
 
+  digitalWrite(LED_PIN, LOW);
   return result;
 }
 
