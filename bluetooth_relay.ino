@@ -14,6 +14,11 @@
 
 #define SETUPBUTTON_PIN  10
 
+// Protocol define
+#define SPLITTER  ":"
+#define OPEN  "OPEN"
+#define TICKET  "TKT"
+#define KEY "PASS"
 
 char secret[SECRET_KEY_LENGTH];// = "password";
 unsigned long sessionStart = 0;
@@ -61,6 +66,23 @@ void relayCom() { // main relay action
   digitalWrite(RELAY_PIN, LOW);
 }
 
+void changeBTName(String newName) {
+  Serial.println("NEWNAME:" + newName);
+  delay(100);
+  digitalWrite(BLE_RESET_PIN, LOW);
+  delay(1);
+  digitalWrite(BLE_RESET_PIN, HIGH);
+  delay(3000);
+  Serial.print("AT");
+  delay(100);
+  Serial.print("AT+NAME" + newName);
+  delay(100);
+  Serial.print("AT+NAMB" + newName);
+  delay(100);
+  Serial.print("AT+RESET");
+  delay(100);
+}
+
 String commandProcessor(String incomingString) {
   String result;
 
@@ -91,10 +113,13 @@ String commandProcessor(String incomingString) {
     EEPROM.put(EEPROM_SECRET_OFFSET, secret);
     result = "OK";
   } else if  (incomingString.startsWith("BTNAME:") && digitalRead(SETUPBUTTON_PIN)) {
-    digitalWrite(BLE_RESET_PIN, LOW);
-    delay(1);
-    digitalWrite(BLE_RESET_PIN, HIGH);
-    result = "COMING_SOON";
+    incomingString.remove(0, incomingString.indexOf(":") + 1);
+    incomingString.trim();
+    if ((0 < incomingString.length()) &&(incomingString.length() <= 12)) {
+      changeBTName(incomingString);
+    } else {
+      result = "NO";
+    }
   } else if  (incomingString.startsWith("BTPIN:") && digitalRead(SETUPBUTTON_PIN)) {
     result = "COMING_SOON";
   }
